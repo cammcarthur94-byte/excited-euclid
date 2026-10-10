@@ -37,13 +37,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const intent = formData.get("intent") as string | null;
 
+  const isTestMode =
+    process.env.NODE_ENV !== "production" ||
+    process.env.SHOPIFY_BILLING_TEST === "true";
+
   if (intent === "cancel") {
     const planInfo = await getMerchantPlan(billing);
     if (planInfo.subscription?.id) {
       try {
         await billing.cancel({
           subscriptionId: planInfo.subscription.id,
-          isTest: true,
+          isTest: isTestMode,
           prorate: true,
         });
         return json({ success: true, message: "Subscription cancelled successfully." });
@@ -61,7 +65,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     return await billing.request({
       plan: PLAN_MONTHLY,
-      isTest: true,
+      isTest: isTestMode,
       returnUrl,
     });
   }

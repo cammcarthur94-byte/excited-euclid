@@ -17,6 +17,10 @@ export default async function handleRequest(
   remixContext: EntryContext,
 ) {
   addDocumentResponseHeaders(request, responseHeaders);
+  responseHeaders.set(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains; preload"
+  );
   const userAgent = request.headers.get("user-agent");
   const callbackName = isbot(userAgent ?? "")
     ? "onAllReady"
