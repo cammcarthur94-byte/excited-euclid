@@ -195,11 +195,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const prodJson = await prodResponse.json();
           product = prodJson.data?.product || null;
         } else {
-          // Try handle first
+          // Try handle first using modern productByIdentifier
           const prodResponse = await admin.graphql(
             `#graphql
-              query getProductByHandle($handle: String!) {
-                productByHandle(handle: $handle) {
+              query getProductByIdentifier($handle: String!) {
+                productByIdentifier(identifier: { handle: $handle }) {
                   id
                   title
                   tags
@@ -232,7 +232,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { variables: { handle: trimmedId.toLowerCase() } },
           );
           const prodJson = await prodResponse.json();
-          product = prodJson.data?.productByHandle || null;
+          product = prodJson.data?.productByIdentifier || null;
 
           // If not found by handle, search by SKU
           if (!product) {
@@ -406,8 +406,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         const prodUpdateResponse = await admin.graphql(
           `#graphql
-            mutation productUpdate($input: ProductInput!) {
-              productUpdate(input: $input) {
+            mutation productUpdate($product: ProductUpdateInput!) {
+              productUpdate(product: $product) {
                 userErrors {
                   field
                   message
@@ -415,7 +415,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               }
             }
           `,
-          { variables: { input } },
+          { variables: { product: input } },
         );
         const prodUpdateJson = await prodUpdateResponse.json();
         const prodErrors = prodUpdateJson.data?.productUpdate?.userErrors || [];

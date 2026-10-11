@@ -534,8 +534,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       for (const update of updates) {
         const response = await admin.graphql(
           `#graphql
-            mutation updateProductStatus($input: ProductInput!) {
-              productUpdate(input: $input) {
+            mutation updateProductStatus($product: ProductUpdateInput!) {
+              productUpdate(product: $product) {
                 product {
                   id
                   status
@@ -549,7 +549,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           `,
           {
             variables: {
-              input: {
+              product: {
                 id: update.productId,
                 status: update.status,
               },
@@ -635,8 +635,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       for (const update of updates) {
         const response = await admin.graphql(
           `#graphql
-            mutation updateProductTags($input: ProductInput!) {
-              productUpdate(input: $input) {
+            mutation updateProductTags($product: ProductUpdateInput!) {
+              productUpdate(product: $product) {
                 product {
                   id
                   tags
@@ -650,7 +650,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           `,
           {
             variables: {
-              input: {
+              product: {
                 id: update.productId,
                 tags: update.tags,
               },
@@ -1065,8 +1065,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         const response = await admin.graphql(
           `#graphql
-            mutation updateProductOrganization($input: ProductInput!) {
-              productUpdate(input: $input) {
+            mutation updateProductOrganization($product: ProductUpdateInput!) {
+              productUpdate(product: $product) {
                 product {
                   id
                   vendor
@@ -1080,7 +1080,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             }
           `,
           {
-            variables: { input },
+            variables: { product: input },
           },
         );
 

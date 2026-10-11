@@ -26,7 +26,7 @@ const appUrl = rawAppUrl.startsWith("http://") || rawAppUrl.startsWith("https://
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY || "b0daba369e048eda0508646744da6d6f",
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
-  apiVersion: ApiVersion.January25,
+  apiVersion: ApiVersion.July26,
   scopes: (process.env.SCOPES || "write_products,read_products,write_inventory,read_inventory,read_locations,write_publications,read_publications").split(","),
   appUrl,
   authPathPrefix: "/auth",
@@ -53,7 +53,7 @@ const shopify = shopifyApp({
 });
 
 export default shopify;
-export const apiVersion = ApiVersion.January25;
+export const apiVersion = ApiVersion.July26;
 export const addDocumentResponseHeaders = shopify.addDocumentResponseHeaders;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;
