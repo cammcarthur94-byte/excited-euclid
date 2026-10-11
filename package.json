@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "postinstall": "prisma generate",
-    "build": "prisma generate && remix vite:build",
+    "build": "remix vite:build",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "config:use": "shopify app config use",

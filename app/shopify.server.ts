@@ -10,12 +10,25 @@ import { PLAN_FREE, PLAN_MONTHLY, PLAN_PRO } from "./billing-plans";
 
 export { PLAN_FREE, PLAN_MONTHLY, PLAN_PRO };
 
+const rawAppUrl =
+  process.env.SHOPIFY_APP_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  (process.env.RENDER_EXTERNAL_HOSTNAME
+    ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}`
+    : "") ||
+  "https://catalog-commander.onrender.com";
+
+// Ensure appUrl has https:// protocol
+const appUrl = rawAppUrl.startsWith("http://") || rawAppUrl.startsWith("https://")
+  ? rawAppUrl
+  : `https://${rawAppUrl}`;
+
 const shopify = shopifyApp({
-  apiKey: process.env.SHOPIFY_API_KEY,
+  apiKey: process.env.SHOPIFY_API_KEY || "b0daba369e048eda0508646744da6d6f",
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
   apiVersion: ApiVersion.January25,
   scopes: (process.env.SCOPES || "write_products,read_products,write_inventory,read_inventory,read_locations,write_publications,read_publications").split(","),
-  appUrl: process.env.SHOPIFY_APP_URL || "",
+  appUrl,
   authPathPrefix: "/auth",
   sessionStorage: new MemorySessionStorage(),
   distribution: AppDistribution.AppStore,
