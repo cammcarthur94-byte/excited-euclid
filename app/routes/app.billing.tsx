@@ -23,11 +23,11 @@ import { PLAN_MONTHLY, PLANS } from "../billing-plans";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { billing } = await authenticate.admin(request);
-  const planInfo = await getMerchantPlan(billing);
+  const status = await getMerchantPlan(billing);
 
   return json({
-    activePlan: planInfo.activePlan,
-    subscription: planInfo.subscription,
+    isSubscribed: status.hasActivePayment,
+    subscription: status.subscription,
     plan: PLANS[PLAN_MONTHLY],
   });
 };
@@ -74,13 +74,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function BillingRoute() {
-  const { activePlan, subscription, plan } = useLoaderData<typeof loader>();
+  const { isSubscribed, subscription, plan } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
-
-  const isSubscribed = activePlan === PLAN_MONTHLY;
 
   const handleSubscribe = () => {
     submit({ intent: "subscribe" }, { method: "post" });
@@ -99,6 +97,14 @@ export default function BillingRoute() {
       backAction={{ content: "Dashboard", url: "/app" }}
     >
       <BlockStack gap="500">
+        {!isSubscribed && (
+          <Banner title="Subscription Required ($9.99/month)" tone="warning">
+            <p>
+              Catalog Commander is a paid app with flat-rate pricing of $9.99/month. Please activate your subscription below to unlock full access to bulk catalog editing, inventory balancing, and CSV synchronization tools.
+            </p>
+          </Banner>
+        )}
+
         {actionData && "error" in actionData && actionData.error && (
           <Banner title="Billing Error" tone="critical">
             <p>{actionData.error}</p>
@@ -121,21 +127,21 @@ export default function BillingRoute() {
               <Text as="p" variant="bodyMd" tone="subdued">
                 {isSubscribed ? (
                   <>
-                    Your store is on the active{" "}
+                    Your store has an active{" "}
                     <Text as="span" fontWeight="bold">
                       Full Access ($9.99/mo)
                     </Text>{" "}
-                    plan.
+                    subscription.
                     {subscription?.test ? " (Test Subscription Active)" : ""}
                   </>
                 ) : (
-                  "You currently do not have an active subscription. Subscribe below to unlock all bulk editing features."
+                  "You currently do not have an active subscription. Subscribe below to start using Catalog Commander."
                 )}
               </Text>
             </BlockStack>
             <InlineStack gap="200" blockAlign="center">
               <Badge tone={isSubscribed ? "success" : "attention"}>
-                {isSubscribed ? "Active ($9.99/mo)" : "Inactive"}
+                {isSubscribed ? "Active ($9.99/mo)" : "Subscription Required"}
               </Badge>
               {isSubscribed && (
                 <Button
@@ -220,7 +226,7 @@ export default function BillingRoute() {
                 <Box paddingBlockStart="200">
                   {isSubscribed ? (
                     <Button fullWidth size="large" disabled>
-                      ✓ Plan is Active on Your Store
+                      ✓ Subscription Active on Your Store ($9.99/mo)
                     </Button>
                   ) : (
                     <Button

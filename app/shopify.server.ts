@@ -6,9 +6,9 @@ import {
   shopifyApp,
 } from "@shopify/shopify-app-remix/server";
 import { MemorySessionStorage } from "@shopify/shopify-app-session-storage-memory";
-import { PLAN_FREE, PLAN_MONTHLY, PLAN_PRO } from "./billing-plans";
+import { PLAN_MONTHLY, PLAN_PRO } from "./billing-plans";
 
-export { PLAN_FREE, PLAN_MONTHLY, PLAN_PRO };
+export { PLAN_MONTHLY, PLAN_PRO };
 
 const rawAppUrl =
   process.env.SHOPIFY_APP_URL ||

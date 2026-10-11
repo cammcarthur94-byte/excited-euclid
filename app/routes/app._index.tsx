@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import {
   Badge,
+  Banner,
   BlockStack,
   Box,
   Page,
@@ -9,6 +10,7 @@ import {
 } from "@shopify/polaris";
 import { CheckCircleIcon } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
+import { getMerchantPlan } from "../billing.server";
 import db from "../db.server";
 import { CatalogHealthOverview } from "../components/dashboard/CatalogHealthOverview";
 import type { CatalogHealthStats } from "../components/dashboard/CatalogHealthOverview";
@@ -43,7 +45,8 @@ interface RawProductNode {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin, session } = await authenticate.admin(request);
+  const { admin, session, billing } = await authenticate.admin(request);
+  const billingStatus = await getMerchantPlan(billing);
 
   // 1. Ensure merchant record exists in Prisma
   let merchant = await db.merchant.findUnique({
@@ -209,6 +212,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     catalogStats,
     recentJobs,
     recentProducts,
+    isSubscribed: billingStatus.hasActivePayment,
   };
 };
 
@@ -219,6 +223,7 @@ export default function Dashboard() {
     catalogStats,
     recentJobs,
     recentProducts,
+    isSubscribed,
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
@@ -247,6 +252,21 @@ export default function Dashboard() {
       ]}
     >
       <BlockStack gap="500">
+        {!isSubscribed && (
+          <Banner
+            title="Subscription Required ($9.99/month)"
+            tone="warning"
+            action={{
+              content: "Subscribe Now ($9.99/mo)",
+              onAction: () => navigate("/app/billing"),
+            }}
+          >
+            <p>
+              Catalog Commander is a paid app with flat-rate pricing of $9.99/month. Please activate your subscription to access all bulk editing, inventory balancing, and CSV syncing tools.
+            </p>
+          </Banner>
+        )}
+
         {/* Store Connection Status Banner */}
         <Box
           background="bg-surface"

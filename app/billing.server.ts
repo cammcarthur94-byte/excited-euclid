@@ -1,5 +1,4 @@
 import {
-  PLAN_FREE,
   PLAN_MONTHLY,
   PLAN_PRO,
   PLANS,
@@ -8,23 +7,25 @@ import {
   type PlanDetails,
 } from "./billing-plans";
 
-export { PLAN_FREE, PLAN_MONTHLY, PLAN_PRO, PLANS };
+export { PLAN_MONTHLY, PLAN_PRO, PLANS };
 export type { PlanName, PaidPlanName, PlanDetails };
 
+export interface MerchantBillingStatus {
+  hasActivePayment: boolean;
+  subscription?: { name: string; id: string; test: boolean };
+  details: PlanDetails;
+}
+
 /**
- * Checks the merchant's active plan using Shopify Managed Billing.
- * Falls back to Free tier if no paid subscription is active.
+ * Checks if the merchant has an active $9.99/mo subscription using Shopify Managed Billing.
+ * Catalog Commander has no free plan; it is exclusively a $9.99/month subscription app.
  */
 export async function getMerchantPlan(billingContext: {
   check: (options?: { plans?: PaidPlanName[]; isTest?: boolean }) => Promise<{
     hasActivePayment: boolean;
     appSubscriptions: Array<{ name: string; id: string; test: boolean }>;
   }>;
-}): Promise<{
-  activePlan: PlanName;
-  subscription?: { name: string; id: string; test: boolean };
-  details: PlanDetails;
-}> {
+}): Promise<MerchantBillingStatus> {
   const isTestMode =
     process.env.NODE_ENV !== "production" ||
     process.env.SHOPIFY_BILLING_TEST === "true";
@@ -37,30 +38,18 @@ export async function getMerchantPlan(billingContext: {
 
     if (check.hasActivePayment && check.appSubscriptions.length > 0) {
       return {
-        activePlan: PLAN_MONTHLY,
+        hasActivePayment: true,
         subscription: check.appSubscriptions[0],
         details: PLANS[PLAN_MONTHLY],
       };
     }
   } catch (error) {
-    console.error("[Billing] Error checking active subscription, defaulting to Free:", error);
+    console.error("[Billing] Error checking active subscription:", error);
   }
 
-  // Merchant does not have an active paid subscription; return Free plan
+  // Merchant does not have an active paid subscription ($9.99/month required)
   return {
-    activePlan: PLAN_FREE,
-    details: PLANS[PLAN_FREE],
+    hasActivePayment: false,
+    details: PLANS[PLAN_MONTHLY],
   };
-}
-
-/**
- * Gate helper to verify if the merchant's plan satisfies a required feature/plan.
- * Returns true for all features to ensure all catalog tools are active.
- */
-export function hasFeatureAccess(
-  _activePlan: PlanName,
-  _feature: keyof PlanDetails["limits"],
-  _requiredValue?: number
-): boolean {
-  return true;
 }
