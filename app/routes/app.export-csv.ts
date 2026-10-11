@@ -218,7 +218,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  return new Response(csvLines.join("\n"), {
+  const csvPayload = "\uFEFF" + csvLines.join("\r\n") + "\r\n";
+  return new Response(csvPayload, {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

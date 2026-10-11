@@ -536,10 +536,13 @@ function validateAndParseRows(
 
   const hasIdentifier =
     normalizedHeaders.includes("handle") ||
+    normalizedHeaders.includes("product handle") ||
     normalizedHeaders.includes("id") ||
     normalizedHeaders.includes("product id") ||
     normalizedHeaders.includes("product_id") ||
-    normalizedHeaders.includes("sku");
+    normalizedHeaders.includes("sku") ||
+    normalizedHeaders.includes("variant sku") ||
+    normalizedHeaders.includes("variant_sku");
 
   if (!hasIdentifier) {
     return {
@@ -551,12 +554,19 @@ function validateAndParseRows(
 
   const hasSupportedField =
     normalizedHeaders.includes("price") ||
+    normalizedHeaders.includes("variant price") ||
+    normalizedHeaders.includes("variant_price") ||
     normalizedHeaders.includes("compare at price") ||
     normalizedHeaders.includes("compare_at_price") ||
     normalizedHeaders.includes("compareatprice") ||
+    normalizedHeaders.includes("variant compare at price") ||
+    normalizedHeaders.includes("variant_compare_at_price") ||
     normalizedHeaders.includes("inventory") ||
     normalizedHeaders.includes("quantity") ||
     normalizedHeaders.includes("stock") ||
+    normalizedHeaders.includes("variant inventory qty") ||
+    normalizedHeaders.includes("variant inventory quantity") ||
+    normalizedHeaders.includes("variant_inventory_qty") ||
     normalizedHeaders.includes("tags") ||
     normalizedHeaders.includes("vendor") ||
     normalizedHeaders.includes("product type") ||
@@ -573,10 +583,24 @@ function validateAndParseRows(
 
   const parsedRows: ParsedRow[] = csvData.rows.map((row, idx) => {
     const rowNumber = idx + 2; // 1-indexed plus header line
-    const identifier =
-      row.handle || row.id || row["product id"] || row.product_id || row.sku || "";
+    const idKey = Object.keys(row).find((k) =>
+      [
+        "handle",
+        "product handle",
+        "id",
+        "product id",
+        "product_id",
+        "sku",
+        "variant sku",
+        "variant_sku",
+      ].includes(k.toLowerCase().trim()),
+    );
+    const identifier = idKey ? row[idKey] : "";
 
-    const title = row.title || null;
+    const titleKey = Object.keys(row).find((k) =>
+      ["title", "product title", "name"].includes(k.toLowerCase().trim()),
+    );
+    const title = titleKey ? row[titleKey] || null : null;
     const errors: string[] = [];
 
     if (!identifier.trim()) {
@@ -585,8 +609,11 @@ function validateAndParseRows(
 
     // Validate Price
     let price: string | null = null;
-    if ("price" in row && row.price.trim() !== "") {
-      const cleanPrice = row.price.replace(/[$,]/g, "").trim();
+    const priceKey = Object.keys(row).find((k) =>
+      ["price", "variant price", "variant_price"].includes(k.toLowerCase().trim()),
+    );
+    if (priceKey && row[priceKey].trim() !== "") {
+      const cleanPrice = row[priceKey].replace(/[$,]/g, "").trim();
       const num = parseFloat(cleanPrice);
       if (isNaN(num) || num < 0) {
         errors.push("Price must be a valid non-negative number.");
@@ -598,7 +625,14 @@ function validateAndParseRows(
     // Validate Compare At Price
     let compareAtPrice: string | null = null;
     const compareKey = Object.keys(row).find((k) =>
-      ["compare at price", "compare_at_price", "compareatprice", "compare at"].includes(k.toLowerCase()),
+      [
+        "compare at price",
+        "compare_at_price",
+        "compareatprice",
+        "compare at",
+        "variant compare at price",
+        "variant_compare_at_price",
+      ].includes(k.toLowerCase().trim()),
     );
     if (compareKey && row[compareKey].trim() !== "") {
       const cleanCompare = row[compareKey].replace(/[$,]/g, "").trim();
@@ -613,7 +647,14 @@ function validateAndParseRows(
     // Validate Inventory
     let inventory: number | null = null;
     const invKey = Object.keys(row).find((k) =>
-      ["inventory", "quantity", "stock"].includes(k.toLowerCase()),
+      [
+        "inventory",
+        "quantity",
+        "stock",
+        "variant inventory qty",
+        "variant inventory quantity",
+        "variant_inventory_qty",
+      ].includes(k.toLowerCase().trim()),
     );
     if (invKey && row[invKey].trim() !== "") {
       const num = parseInt(row[invKey].trim(), 10);
@@ -716,29 +757,62 @@ export default function CsvImportPage() {
   };
 
   const handleLoadSample = () => {
-    const sample = `Handle,Title,SKU,Price,Compare At Price,Inventory,Tags,Vendor,Product Type
-snowboard,All-Mountain Snowboard,BOARD-158,299.99,349.99,25,"winter, sports, outdoor",Apex Gear,Snowboards
-classic-tee,Classic Cotton T-Shirt,TSHIRT-BLK-M,29.99,39.99,50,"apparel, summer, cotton",Acme Apparel,Clothing
-wool-beanie,Merino Wool Beanie,BEANIE-GRY,18.50,24.00,40,"accessories, winter, warm",Nordic Knits,Accessories`;
+    const sample = [
+      "Handle,Title,SKU,Price,Compare At Price,Inventory,Tags,Vendor,Product Type",
+      'classic-cotton-t-shirt,Classic Cotton T-Shirt,TSHIRT-BLK-M,29.99,39.99,50,"apparel, summer, cotton",Acme Apparel,Clothing',
+      'all-mountain-snowboard,All-Mountain Snowboard,BOARD-158,299.99,349.99,15,"winter, sports, outdoor",Apex Gear,Snowboards',
+      'merino-wool-beanie,Merino Wool Beanie,BEANIE-GRY,18.50,24.00,40,"accessories, winter, warm",Nordic Knits,Accessories',
+      'low-top-canvas-sneakers,Low-Top Canvas Sneakers,SHOE-WHT-10,54.00,65.00,25,"footwear, casual, shoes",Urban Stride,Shoes',
+      'stainless-steel-water-bottle,Stainless Steel Water Bottle,BOTTLE-32OZ,24.95,34.95,80,"hydration, eco, accessories",HydroPeak,Accessories',
+      'trail-running-backpack,Trail Running Backpack,PACK-20L-BLU,79.00,95.00,30,"outdoor, hiking, packs",Apex Gear,Bags',
+    ].join("\r\n");
     processCsvText(sample, "sample_catalog_update.csv");
   };
 
   const handleDownloadTemplate = () => {
+    const rows = [
+      "Handle,Title,SKU,Price,Compare At Price,Inventory,Tags,Vendor,Product Type",
+      'classic-cotton-t-shirt,Classic Cotton T-Shirt,TSHIRT-BLK-M,29.99,39.99,50,"apparel, summer, cotton",Acme Apparel,Clothing',
+      'all-mountain-snowboard,All-Mountain Snowboard,BOARD-158,299.99,349.99,15,"winter, sports, outdoor",Apex Gear,Snowboards',
+      'merino-wool-beanie,Merino Wool Beanie,BEANIE-GRY,18.50,24.00,40,"accessories, winter, warm",Nordic Knits,Accessories',
+      'low-top-canvas-sneakers,Low-Top Canvas Sneakers,SHOE-WHT-10,54.00,65.00,25,"footwear, casual, shoes",Urban Stride,Shoes',
+      'stainless-steel-water-bottle,Stainless Steel Water Bottle,BOTTLE-32OZ,24.95,34.95,80,"hydration, eco, accessories",HydroPeak,Accessories',
+      'trail-running-backpack,Trail Running Backpack,PACK-20L-BLU,79.00,95.00,30,"outdoor, hiking, packs",Apex Gear,Bags',
+    ];
+
+    // UTF-8 BOM (\uFEFF) ensures Excel on Windows and Mac opens the CSV with clean columns and no garbled text
+    const csvContent = "\uFEFF" + rows.join("\r\n") + "\r\n";
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = "/app/template-csv";
+    link.href = url;
     link.download = "catalog_update_template.csv";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
-  const handleExportCatalog = () => {
-    const link = document.createElement("a");
-    link.href = "/app/export-csv";
-    link.download = `catalog_export_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportCatalog = async () => {
+    try {
+      const response = await fetch("/app/export-csv");
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.status}`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `catalog_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("[CsvImport] Error exporting catalog:", err);
+      // Fallback
+      window.open("/app/export-csv", "_blank");
+    }
   };
 
   const handleClear = () => {

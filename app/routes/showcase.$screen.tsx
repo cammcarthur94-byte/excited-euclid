@@ -11,7 +11,6 @@ import {
   Badge,
   Button,
   IndexTable,
-  Thumbnail,
   TextField,
   Select,
   Banner,

@@ -619,17 +619,27 @@ export default function ProductsPage() {
             selectedResources.length > 0
               ? `Export Selected (${selectedResources.length}) to CSV`
               : "Export Catalog to CSV",
-          onAction: () => {
+          onAction: async () => {
             const url =
               selectedResources.length > 0
                 ? `/app/export-csv?ids=${encodeURIComponent(selectedResources.join(","))}`
                 : "/app/export-csv";
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `catalog_export_${new Date().toISOString().slice(0, 10)}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            try {
+              const res = await fetch(url);
+              if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+              const blob = await res.blob();
+              const blobUrl = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = blobUrl;
+              link.download = `catalog_export_${new Date().toISOString().slice(0, 10)}.csv`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(blobUrl);
+            } catch (err) {
+              console.error("[Products] Export failed:", err);
+              window.open(url, "_blank");
+            }
           },
         },
         {
@@ -855,13 +865,24 @@ export default function ProductsPage() {
                 },
                 {
                   content: "Export to CSV",
-                  onAction: () => {
-                    const link = document.createElement("a");
-                    link.href = `/app/export-csv?ids=${encodeURIComponent(selectedResources.join(","))}`;
-                    link.download = `catalog_export_selected_${new Date().toISOString().slice(0, 10)}.csv`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                  onAction: async () => {
+                    const url = `/app/export-csv?ids=${encodeURIComponent(selectedResources.join(","))}`;
+                    try {
+                      const res = await fetch(url);
+                      if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+                      const blob = await res.blob();
+                      const blobUrl = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.href = blobUrl;
+                      link.download = `catalog_export_selected_${new Date().toISOString().slice(0, 10)}.csv`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(blobUrl);
+                    } catch (err) {
+                      console.error("[Products] Export selected failed:", err);
+                      window.open(url, "_blank");
+                    }
                   },
                 },
               ]}
