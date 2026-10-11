@@ -22,7 +22,7 @@
   "dependencies": {
     "@neon/config": "^1.8.6",
     "@neon/env": "^1.5.3",
-    "@prisma/client": "^6.2.1",
+    "@prisma/client": "^7.10.0",
     "@remix-run/dev": "^2.16.1",
     "@remix-run/fs-routes": "^2.16.1",
     "@remix-run/node": "^2.16.1",
