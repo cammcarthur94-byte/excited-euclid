@@ -33,6 +33,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     variants: VariantExport[];
   }
 
+  function getVariantInventory(inventoryItem: any): number {
+    const levels = inventoryItem?.inventoryLevels?.edges || [];
+    let available = 0;
+    for (const lvl of levels) {
+      const qty = lvl.node?.quantities?.find(
+        (q: { name: string; quantity: number }) => q.name === "available",
+      )?.quantity;
+      if (typeof qty === "number") {
+        available += qty;
+      }
+    }
+    return available;
+  }
+
   const exportedProducts: ProductExport[] = [];
 
   if (idsParam) {
@@ -62,7 +76,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                         sku
                         price
                         compareAtPrice
-                        inventoryQuantity
+                        inventoryItem {
+                          inventoryLevels(first: 10) {
+                            edges {
+                              node {
+                                quantities(names: ["available"]) {
+                                  name
+                                  quantity
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -87,7 +112,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                 sku: e.node.sku || "",
                 price: e.node.price || "0.00",
                 compareAtPrice: e.node.compareAtPrice || null,
-                inventoryQuantity: e.node.inventoryQuantity ?? 0,
+                inventoryQuantity: getVariantInventory(e.node.inventoryItem),
               })),
             });
           }
@@ -124,7 +149,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                         sku
                         price
                         compareAtPrice
-                        inventoryQuantity
+                        inventoryItem {
+                          inventoryLevels(first: 10) {
+                            edges {
+                              node {
+                                quantities(names: ["available"]) {
+                                  name
+                                  quantity
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -152,7 +188,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
             sku: e.node.sku || "",
             price: e.node.price || "0.00",
             compareAtPrice: e.node.compareAtPrice || null,
-            inventoryQuantity: e.node.inventoryQuantity ?? 0,
+            inventoryQuantity: getVariantInventory(e.node.inventoryItem),
           })),
         });
       }

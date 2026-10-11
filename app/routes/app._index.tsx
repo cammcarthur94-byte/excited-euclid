@@ -9,7 +9,7 @@ import {
   Text,
 } from "@shopify/polaris";
 import { CheckCircleIcon } from "@shopify/polaris-icons";
-import { authenticate } from "../shopify.server";
+import { authenticate, apiVersion } from "../shopify.server";
 import { getMerchantPlan } from "../billing.server";
 import db from "../db.server";
 import { CatalogHealthOverview } from "../components/dashboard/CatalogHealthOverview";
@@ -207,6 +207,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     shop: session.shop,
     shopTitle,
+    apiVersion,
     merchantId: merchant.id,
     installedAt: merchant.createdAt.toISOString(),
     catalogStats,
@@ -220,6 +221,7 @@ export default function Dashboard() {
   const {
     shop,
     shopTitle,
+    apiVersion,
     catalogStats,
     recentJobs,
     recentProducts,
@@ -288,7 +290,7 @@ export default function Dashboard() {
               <Badge tone="success" icon={CheckCircleIcon}>
                 {`Store Connected: ${shopTitle}`}
               </Badge>
-              <Badge tone="info">API 2025-01 Active</Badge>
+              <Badge tone="info">{`API ${apiVersion} Active`}</Badge>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>

@@ -11,17 +11,18 @@ import {
   Page,
   Text,
 } from "@shopify/polaris";
-import { authenticate } from "../shopify.server";
+import { authenticate, apiVersion } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   return json({
     shop: session.shop,
+    apiVersion,
   });
 };
 
 export default function SettingsPage() {
-  const { shop } = useLoaderData<typeof loader>();
+  const { shop, apiVersion } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   return (
@@ -68,7 +69,7 @@ export default function SettingsPage() {
                 <Text as="span" variant="bodyMd" tone="subdued">
                   API Version
                 </Text>
-                <Badge tone="info">2025-01 Active</Badge>
+                <Badge tone="info">{`${apiVersion} Active`}</Badge>
               </InlineStack>
             </BlockStack>
           </BlockStack>
