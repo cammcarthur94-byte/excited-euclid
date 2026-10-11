@@ -2,7 +2,7 @@
 
 client_id = "b0daba369e048eda0508646744da6d6f"
 name = "Catalog Commander"
-application_url = "https://example.com"
+application_url = "https://excited-euclid.onrender.com"
 embedded = true
 
 [access_scopes]
@@ -10,7 +10,11 @@ embedded = true
 scopes = "write_products,read_products,write_inventory,read_inventory,read_locations,write_publications,read_publications"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [
+  "https://excited-euclid.onrender.com/auth/callback",
+  "https://excited-euclid.onrender.com/auth/shopify/callback",
+  "https://excited-euclid.onrender.com/api/auth/callback"
+]
 
 [webhooks]
 api_version = "2027-01"
