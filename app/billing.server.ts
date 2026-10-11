@@ -25,10 +25,14 @@ export async function getMerchantPlan(billingContext: {
   subscription?: { name: string; id: string; test: boolean };
   details: PlanDetails;
 }> {
+  const isTestMode =
+    process.env.NODE_ENV !== "production" ||
+    process.env.SHOPIFY_BILLING_TEST === "true";
+
   try {
     const check = await billingContext.check({
       plans: [PLAN_MONTHLY],
-      isTest: true,
+      isTest: isTestMode,
     });
 
     if (check.hasActivePayment && check.appSubscriptions.length > 0) {
@@ -42,15 +46,10 @@ export async function getMerchantPlan(billingContext: {
     console.error("[Billing] Error checking active subscription, defaulting to Free:", error);
   }
 
-  // Ensure all features are active and available for the store
+  // Merchant does not have an active paid subscription; return Free plan
   return {
-    activePlan: PLAN_MONTHLY,
-    subscription: {
-      name: PLAN_MONTHLY,
-      id: "sub_full_access_active",
-      test: true,
-    },
-    details: PLANS[PLAN_MONTHLY],
+    activePlan: PLAN_FREE,
+    details: PLANS[PLAN_FREE],
   };
 }
 
