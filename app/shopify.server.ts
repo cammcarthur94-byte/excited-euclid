@@ -16,7 +16,7 @@ const rawAppUrl =
   (process.env.RENDER_EXTERNAL_HOSTNAME
     ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}`
     : "") ||
-  "https://catalog-commander.onrender.com";
+  "https://excited-euclid.onrender.com";
 
 // Ensure appUrl has https:// protocol
 const appUrl = rawAppUrl.startsWith("http://") || rawAppUrl.startsWith("https://")

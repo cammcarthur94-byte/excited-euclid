@@ -28,4 +28,4 @@ compliance_topics = [
 uri = "/webhooks/compliance"
 
 [build]
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
