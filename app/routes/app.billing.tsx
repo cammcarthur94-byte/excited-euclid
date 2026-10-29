@@ -33,7 +33,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { billing, session } = await authenticate.admin(request);
+  const { billing, session, admin } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = formData.get("intent") as string | null;
 
@@ -42,20 +42,99 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     process.env.SHOPIFY_BILLING_TEST === "true";
 
   if (intent === "cancel") {
-    const planInfo = await getMerchantPlan(billing);
-    if (planInfo.subscription?.id) {
-      try {
-        await billing.cancel({
-          subscriptionId: planInfo.subscription.id,
-          isTest: isTestMode,
-          prorate: true,
+    try {
+      // 1. Query active subscriptions directly from Shopify GraphQL
+      const subResponse = await admin.graphql(
+        `#graphql
+          query getAppSubscriptions {
+            currentAppInstallation {
+              activeSubscriptions {
+                id
+                name
+                status
+                test
+              }
+            }
+          }
+        `,
+      );
+      const subJson = await subResponse.json();
+      const activeSubs =
+        subJson.data?.currentAppInstallation?.activeSubscriptions || [];
+
+      // 2. Also check planInfo fallback
+      const planInfo = await getMerchantPlan(billing);
+      let targetId = activeSubs[0]?.id || planInfo.subscription?.id;
+
+      if (!targetId) {
+        return json({
+          success: true,
+          message: "No active subscription found to cancel.",
         });
-        return json({ success: true, message: "Subscription cancelled successfully." });
-      } catch (err: any) {
-        return json({ success: false, error: err.message || "Failed to cancel subscription." }, { status: 400 });
       }
+
+      // 3. Format ID properly as a valid Shopify Global ID (GID)
+      let subGid = String(targetId).trim();
+      if (/^\d+$/.test(subGid)) {
+        subGid = `gid://shopify/AppSubscription/${subGid}`;
+      } else if (!subGid.startsWith("gid://shopify/AppSubscription/")) {
+        const matches = subGid.match(/\d+/);
+        if (matches) {
+          subGid = `gid://shopify/AppSubscription/${matches[0]}`;
+        }
+      }
+
+      console.log("[Billing Cancel] Cancelling subscription with GID:", subGid);
+
+      // 4. Cancel the subscription directly via GraphQL mutation
+      const cancelResponse = await admin.graphql(
+        `#graphql
+          mutation appSubscriptionCancel($id: ID!, $prorate: Boolean) {
+            appSubscriptionCancel(id: $id, prorate: $prorate) {
+              appSubscription {
+                id
+                status
+              }
+              userErrors {
+                field
+                message
+              }
+            }
+          }
+        `,
+        {
+          variables: {
+            id: subGid,
+            prorate: true,
+          },
+        },
+      );
+
+      const cancelJson = await cancelResponse.json();
+      const userErrors =
+        cancelJson.data?.appSubscriptionCancel?.userErrors || [];
+
+      if (userErrors.length > 0) {
+        const errorMsg = userErrors
+          .map((e: { message: string }) => e.message)
+          .join(", ");
+        return json({ success: false, error: errorMsg }, { status: 400 });
+      }
+
+      return json({
+        success: true,
+        message: "Subscription cancelled successfully.",
+      });
+    } catch (err: any) {
+      console.error("[Billing Cancel] Error:", err);
+      return json(
+        {
+          success: false,
+          error: err.message || "Failed to cancel subscription.",
+        },
+        { status: 400 },
+      );
     }
-    return json({ success: true, message: "No active subscription to cancel." });
   }
 
   if (intent === "subscribe") {

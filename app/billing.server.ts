@@ -26,20 +26,31 @@ export async function getMerchantPlan(billingContext: {
     appSubscriptions: Array<{ name: string; id: string; test: boolean }>;
   }>;
 }): Promise<MerchantBillingStatus> {
-  const isTestMode =
-    process.env.NODE_ENV !== "production" ||
-    process.env.SHOPIFY_BILLING_TEST === "true";
-
   try {
-    const check = await billingContext.check({
+    // 1. Check for real active paid subscription (production)
+    const checkProd = await billingContext.check({
       plans: [PLAN_MONTHLY],
-      isTest: isTestMode,
+      isTest: false,
     });
 
-    if (check.hasActivePayment && check.appSubscriptions.length > 0) {
+    if (checkProd.hasActivePayment && checkProd.appSubscriptions.length > 0) {
       return {
         hasActivePayment: true,
-        subscription: check.appSubscriptions[0],
+        subscription: checkProd.appSubscriptions[0],
+        details: PLANS[PLAN_MONTHLY],
+      };
+    }
+
+    // 2. Also check for test subscriptions (allows test stores and review testing)
+    const checkTest = await billingContext.check({
+      plans: [PLAN_MONTHLY],
+      isTest: true,
+    });
+
+    if (checkTest.hasActivePayment && checkTest.appSubscriptions.length > 0) {
+      return {
+        hasActivePayment: true,
+        subscription: checkTest.appSubscriptions[0],
         details: PLANS[PLAN_MONTHLY],
       };
     }
