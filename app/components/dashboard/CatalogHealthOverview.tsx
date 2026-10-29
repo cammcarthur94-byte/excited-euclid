@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "@remix-run/react";
 import {
   Badge,
   BlockStack,
@@ -10,8 +12,10 @@ import {
   Text,
 } from "@shopify/polaris";
 import {
-  CheckCircleIcon,
-  AlertCircleIcon,
+  ArrowRightIcon,
+  DiscountIcon,
+  ImageIcon,
+  InventoryIcon,
   ProductIcon,
 } from "@shopify/polaris-icons";
 
@@ -34,7 +38,9 @@ interface CatalogHealthOverviewProps {
 export function CatalogHealthOverview({
   stats,
   onOpenAudit,
+  onBulkEdit,
 }: CatalogHealthOverviewProps) {
+  const navigate = useNavigate();
   const getScoreTone = (score: number): "success" | "attention" | "critical" => {
     if (score >= 90) return "success";
     if (score >= 70) return "attention";
@@ -137,172 +143,307 @@ export function CatalogHealthOverview({
         {/* 4 Health Category Metric Tiles */}
         <InlineGrid columns={{ xs: 1, sm: 2, md: 4 }} gap="300">
           {/* Stock Health */}
-          <div style={{ height: "100%", display: "flex" }}>
-            <Box
-              background="bg-surface-secondary"
-              borderRadius="200"
-              padding="300"
-              width="100%"
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  height: "100%",
-                  minHeight: "105px",
-                }}
-              >
-                <BlockStack gap="150">
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Icon
-                      source={stats.outOfStockProducts === 0 ? CheckCircleIcon : AlertCircleIcon}
-                      tone={stats.outOfStockProducts === 0 ? "success" : "warning"}
-                    />
-                    <Text as="span" variant="bodySm" fontWeight="semibold">
-                      Stock Health
-                    </Text>
-                  </div>
-                  <Text as="p" variant="headingSm" fontWeight="bold">
-                    {stats.outOfStockProducts === 0
-                      ? "100% In Stock"
-                      : `${stats.outOfStockProducts} Out of Stock`}
-                  </Text>
-                  <div style={{ minHeight: "32px" }}>
-                    <Text as="p" variant="bodyXs" tone="subdued">
-                      {stats.outOfStockProducts === 0
-                        ? "Zero out-of-stock items"
-                        : "Items need stock replenishment"}
-                    </Text>
-                  </div>
-                </BlockStack>
-              </div>
-            </Box>
-          </div>
+          <HealthMetricTile
+            icon={InventoryIcon}
+            iconTone={stats.outOfStockProducts > 0 ? "critical" : "success"}
+            iconBg={
+              stats.outOfStockProducts > 0
+                ? "#FDF1F1"
+                : "#EDF7ED"
+            }
+            title="Stock Health"
+            badgeText={
+              stats.outOfStockProducts === 0
+                ? "Healthy"
+                : `${stats.outOfStockProducts} Out`
+            }
+            badgeTone={stats.outOfStockProducts === 0 ? "success" : "critical"}
+            primaryValue={
+              stats.outOfStockProducts === 0
+                ? "100% In Stock"
+                : `${stats.outOfStockProducts} Out of Stock`
+            }
+            valueTone={stats.outOfStockProducts > 0 ? "critical" : "base"}
+            description={
+              stats.outOfStockProducts === 0
+                ? "Zero stockouts across catalog"
+                : "Items need stock replenishment"
+            }
+            actionText={
+              stats.outOfStockProducts > 0
+                ? "Filter out of stock"
+                : "View inventory"
+            }
+            onClick={() =>
+              navigate(
+                stats.outOfStockProducts > 0
+                  ? "/app/products?inventory=OUT_OF_STOCK"
+                  : "/app/products",
+              )
+            }
+          />
 
           {/* Media Completeness */}
-          <div style={{ height: "100%", display: "flex" }}>
-            <Box
-              background="bg-surface-secondary"
-              borderRadius="200"
-              padding="300"
-              width="100%"
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  height: "100%",
-                  minHeight: "105px",
-                }}
-              >
-                <BlockStack gap="150">
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Icon
-                      source={stats.missingImagesProducts === 0 ? CheckCircleIcon : AlertCircleIcon}
-                      tone={stats.missingImagesProducts === 0 ? "success" : "warning"}
-                    />
-                    <Text as="span" variant="bodySm" fontWeight="semibold">
-                      Media Completeness
-                    </Text>
-                  </div>
-                  <Text as="p" variant="headingSm" fontWeight="bold">
-                    {stats.missingImagesProducts === 0
-                      ? "100% Complete"
-                      : `${stats.missingImagesProducts} Missing`}
-                  </Text>
-                  <div style={{ minHeight: "32px" }}>
-                    <Text as="p" variant="bodyXs" tone="subdued">
-                      {stats.missingImagesProducts === 0
-                        ? "All listings have media"
-                        : "Products lacking image files"}
-                    </Text>
-                  </div>
-                </BlockStack>
-              </div>
-            </Box>
-          </div>
+          <HealthMetricTile
+            icon={ImageIcon}
+            iconTone={stats.missingImagesProducts > 0 ? "warning" : "success"}
+            iconBg={
+              stats.missingImagesProducts > 0
+                ? "#FFFBEB"
+                : "#EDF7ED"
+            }
+            title="Media Completeness"
+            badgeText={
+              stats.missingImagesProducts === 0
+                ? "Complete"
+                : `${stats.missingImagesProducts} Missing`
+            }
+            badgeTone={
+              stats.missingImagesProducts === 0 ? "success" : "attention"
+            }
+            primaryValue={
+              stats.missingImagesProducts === 0
+                ? "100% Complete"
+                : `${stats.missingImagesProducts} Missing`
+            }
+            valueTone={stats.missingImagesProducts > 0 ? "warning" : "base"}
+            description={
+              stats.missingImagesProducts === 0
+                ? "All listings have media files"
+                : "Products lacking image files"
+            }
+            actionText={
+              stats.missingImagesProducts > 0
+                ? "Review missing images"
+                : "View media"
+            }
+            onClick={() => navigate("/app/products")}
+          />
 
           {/* Publishing Status */}
-          <div style={{ height: "100%", display: "flex" }}>
-            <Box
-              background="bg-surface-secondary"
-              borderRadius="200"
-              padding="300"
-              width="100%"
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  height: "100%",
-                  minHeight: "105px",
-                }}
-              >
-                <BlockStack gap="150">
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Icon source={CheckCircleIcon} tone="success" />
-                    <Text as="span" variant="bodySm" fontWeight="semibold">
-                      Publishing Status
-                    </Text>
-                  </div>
-                  <Text as="p" variant="headingSm" fontWeight="bold">
-                    {stats.activeProducts} Active
-                  </Text>
-                  <div style={{ minHeight: "32px" }}>
-                    <Text as="p" variant="bodyXs" tone="subdued">
-                      {stats.draftProducts === 0
-                        ? "0 drafts pending"
-                        : `${stats.draftProducts} draft item${stats.draftProducts === 1 ? "" : "s"} saved`}
-                    </Text>
-                  </div>
-                </BlockStack>
-              </div>
-            </Box>
-          </div>
+          <HealthMetricTile
+            icon={ProductIcon}
+            iconTone="info"
+            iconBg="#EFF6FF"
+            title="Publishing Status"
+            badgeText={
+              stats.draftProducts > 0
+                ? `${stats.draftProducts} Draft${stats.draftProducts === 1 ? "" : "s"}`
+                : "Live"
+            }
+            badgeTone={stats.draftProducts > 0 ? "attention" : "info"}
+            primaryValue={`${stats.activeProducts} Active`}
+            valueTone="base"
+            description={
+              stats.draftProducts === 0
+                ? "0 drafts pending review"
+                : `${stats.draftProducts} draft item${stats.draftProducts === 1 ? "" : "s"} saved`
+            }
+            actionText={
+              stats.draftProducts > 0 ? "Review drafts" : "Browse catalog"
+            }
+            onClick={() =>
+              navigate(
+                stats.draftProducts > 0
+                  ? "/app/products?status=DRAFT"
+                  : "/app/products",
+              )
+            }
+          />
 
-          {/* Promotions & Deals */}
-          <div style={{ height: "100%", display: "flex" }}>
-            <Box
-              background="bg-surface-secondary"
-              borderRadius="200"
-              padding="300"
-              width="100%"
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  height: "100%",
-                  minHeight: "105px",
-                }}
-              >
-                <BlockStack gap="150">
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Icon source={CheckCircleIcon} tone="success" />
-                    <Text as="span" variant="bodySm" fontWeight="semibold">
-                      Promotions & Sales
-                    </Text>
-                  </div>
-                  <Text as="p" variant="headingSm" fontWeight="bold">
-                    {stats.saleProducts} On Sale
-                  </Text>
-                  <div style={{ minHeight: "32px" }}>
-                    <Text as="p" variant="bodyXs" tone="subdued">
-                      {stats.saleProducts === 0
-                        ? "Standard store pricing"
-                        : `${stats.saleProducts} compare-at discount${stats.saleProducts === 1 ? "" : "s"}`}
-                    </Text>
-                  </div>
-                </BlockStack>
-              </div>
-            </Box>
-          </div>
+          {/* Promotions & Sales */}
+          <HealthMetricTile
+            icon={DiscountIcon}
+            iconTone="magic"
+            iconBg="#F5F3FF"
+            title="Promotions & Sales"
+            badgeText={stats.saleProducts > 0 ? `${stats.saleProducts} Active` : "Regular"}
+            badgeTone={stats.saleProducts > 0 ? "success" : "info"}
+            primaryValue={`${stats.saleProducts} On Sale`}
+            valueTone="base"
+            description={
+              stats.saleProducts === 0
+                ? "Standard store pricing active"
+                : `${stats.saleProducts} compare-at discount${stats.saleProducts === 1 ? "" : "s"} active`
+            }
+            actionText="Manage pricing"
+            onClick={onBulkEdit || (() => navigate("/app/bulk-edit"))}
+          />
         </InlineGrid>
       </BlockStack>
     </Card>
+  );
+}
+
+interface HealthMetricTileProps {
+  icon: any;
+  iconTone?: "base" | "success" | "warning" | "critical" | "info" | "magic";
+  iconBg: string;
+  title: string;
+  badgeText: string;
+  badgeTone: "success" | "attention" | "critical" | "info";
+  primaryValue: string;
+  valueTone?: "critical" | "warning" | "success" | "base";
+  description: string;
+  actionText?: string;
+  onClick: () => void;
+}
+
+function HealthMetricTile({
+  icon,
+  iconTone = "base",
+  iconBg,
+  title,
+  badgeText,
+  badgeTone,
+  primaryValue,
+  valueTone = "base",
+  description,
+  actionText = "View details",
+  onClick,
+}: HealthMetricTileProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      role="button"
+      tabIndex={0}
+      aria-label={`${title}: ${primaryValue}, ${description}`}
+      style={{
+        height: "100%",
+        display: "flex",
+        cursor: "pointer",
+        outline: "none",
+        transition: "transform 0.15s ease",
+        transform: isHovered ? "translateY(-2px)" : "none",
+      }}
+    >
+      <Box
+        background="bg-surface"
+        borderRadius="300"
+        borderWidth="025"
+        borderColor={
+          isHovered
+            ? "border-hover"
+            : badgeTone === "critical"
+            ? "border-critical"
+            : badgeTone === "attention"
+            ? "border-caution"
+            : "border"
+        }
+        padding="300"
+        width="100%"
+        shadow={isHovered ? "200" : "100"}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            height: "100%",
+            minHeight: "135px",
+            gap: "12px",
+          }}
+        >
+          <BlockStack gap="150">
+            {/* Header: Icon + Category on left, Status Badge on right */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "8px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "6px",
+                    backgroundColor: iconBg,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon source={icon} tone={iconTone} />
+                </div>
+                <Text as="span" variant="bodySm" fontWeight="semibold">
+                  {title}
+                </Text>
+              </div>
+              <Badge tone={badgeTone} size="small">
+                {badgeText}
+              </Badge>
+            </div>
+
+            {/* Metric Value */}
+            <div>
+              <Text
+                as="p"
+                variant="headingMd"
+                fontWeight="bold"
+                tone={valueTone === "critical" ? "critical" : undefined}
+              >
+                {primaryValue}
+              </Text>
+            </div>
+
+            {/* Subtitle / Description */}
+            <div style={{ minHeight: "28px" }}>
+              <Text as="p" variant="bodyXs" tone="subdued">
+                {description}
+              </Text>
+            </div>
+          </BlockStack>
+
+          {/* Action Footer */}
+          <div
+            style={{
+              paddingTop: "8px",
+              borderTop: "1px solid var(--p-color-border-subdued, #e5e5e5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Text as="span" variant="bodyXs" fontWeight="medium">
+              <span
+                style={{
+                  color: isHovered
+                    ? "var(--p-color-text-brand, #005bd3)"
+                    : "var(--p-color-text-secondary, #616161)",
+                  transition: "color 0.15s ease",
+                }}
+              >
+                {actionText}
+              </span>
+            </Text>
+            <div
+              style={{
+                transform: isHovered ? "translateX(2px)" : "none",
+                transition: "transform 0.15s ease",
+              }}
+            >
+              <Icon
+                source={ArrowRightIcon}
+                tone={isHovered ? "primary" : "subdued"}
+              />
+            </div>
+          </div>
+        </div>
+      </Box>
+    </div>
   );
 }
